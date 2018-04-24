@@ -1,0 +1,19 @@
+
+# Python
+.pyc
+__pycache__
+
+# Virtualenv
+bin/
+include/
+lib/
+local/
+pip-selfcheck.json
+share/
+
+# Tensorflow Demo
+MNIST-data/
+logs/
+
+# PA1
+
