@@ -14,7 +14,7 @@ def custom_model_fn(features, labels, mode, params):
 
     # If is_training is False, dropout is not applied
     is_training = False
-    if mode == tf.estimator.ModeKeys.TRAIN:
+    if mode == tf.estimator.ModeKeys.TRAIN and dropout_rate > 0:
         is_training = True
 
 
@@ -62,8 +62,15 @@ def custom_model_fn(features, labels, mode, params):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def print_usage ():
-    # print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps]")
+    # print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps] [dropout rate] [optimizer]")
     print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps] [dropout rate]")
+    print ("- depth         : 3 / 5 / 7")
+    print ("- units         : number of units in hidden layer")
+    print ("- batch_size    : batch size when training the model")
+    print ("- learning rate : learning rate for optimizer")
+    print ("- steps         : total steps when training the model")
+    print ("- dropout rate  : rate when applying dropout. 0.0 for doing nothing")
+    # print ("- optimizer     : D for GradientDescent, A for Adam")
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
