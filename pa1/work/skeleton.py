@@ -10,15 +10,23 @@ def custom_model_fn(features, labels, mode, params):
     depth = params["depth"]
     units = params["units"]
     learning_rate = params["learning_rate"]
+    dropout_rate = params["dropout_rate"] # Doing nothing now
 
     # Input Layer
     input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
 
-    first_hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)    
-    second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = units, activation = tf.nn.relu)
+    # first_hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)    
+    # second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = units, activation = tf.nn.relu)
+
+    hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)
+    # Dropout Regularization
+    # hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+
+    for i in range (depth - 2):
+        hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
 
     # Output logits Layer
-    logits = tf.layers.dense(inputs = second_hidden_layer, units = 10)
+    logits = tf.layers.dense(inputs = hidden_layer, units = 10)
 
     predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
@@ -39,7 +47,6 @@ def custom_model_fn(features, labels, mode, params):
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        # optimizer = tf.train."custom optimizer" # Refer to tf.train
         optimizer = tf.train.GradientDescentOptimizer (learning_rate) # Learning Rate
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
@@ -50,6 +57,7 @@ def custom_model_fn(features, labels, mode, params):
 
 def print_usage ():
     print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps]")
+    # print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps] [dropout rate]")
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
@@ -57,18 +65,14 @@ if __name__ == '__main__':
     if len (sys.argv) != 6:
         print_usage ()
         sys.exit ()
-
-    # layers = 3
-    # units = 100
-    # batch_size = 100
-    # learning_rate = 0.1
-    # steps = 20000
     
     depth = int (argv[0])
     units = int (argv[1])
     batch_size = int (argv[2])
     learning_rate = float (argv[3])
     steps = int (argv[4])
+    # dropout_rate = float (argv[5])
+    dropout_rate = 0.25
 
 
     # Write your dataset path
@@ -82,7 +86,7 @@ if __name__ == '__main__':
     eval_labels = dataset_eval[:,784].astype(np.int32)
 
     # Save model and checkpoint
-    model_params = {"depth" : depth, "units" : units, "learning_rate" : learning_rate}
+    model_params = {"depth" : depth, "units" : units, "learning_rate" : learning_rate, "dropout_rate" : dropout_rate} 
     classifier = tf.estimator.Estimator(model_fn=custom_model_fn, model_dir="./model", params = model_params)
 
     # Set up logging for predictions
