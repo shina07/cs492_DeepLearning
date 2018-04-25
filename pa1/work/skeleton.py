@@ -12,18 +12,23 @@ def custom_model_fn(features, labels, mode, params):
     learning_rate = params["learning_rate"]
     dropout_rate = params["dropout_rate"] # Doing nothing now
 
+    # If is_training is False, dropout is not applied
+    is_training = False
+    if mode == tf.estimator.ModeKeys.TRAIN:
+        is_training = True
+
+
     # Input Layer
     input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
 
-    # first_hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)    
-    # second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = units, activation = tf.nn.relu)
-
     hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)
     # Dropout Regularization
-    # hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
 
     for i in range (depth - 2):
         hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+        hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+
 
     # Output logits Layer
     logits = tf.layers.dense(inputs = hidden_layer, units = 10)
@@ -47,7 +52,8 @@ def custom_model_fn(features, labels, mode, params):
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer (learning_rate) # Learning Rate
+        optimizer = tf.train.GradientDescentOptimizer (learning_rate)
+        # optimizer = tf.train.AdamOptimizer (learning_rate)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
@@ -56,13 +62,13 @@ def custom_model_fn(features, labels, mode, params):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def print_usage ():
-    print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps]")
-    # print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps] [dropout rate]")
+    # print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps]")
+    print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps] [dropout rate]")
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
 
-    if len (sys.argv) != 6:
+    if len (sys.argv) != 7:
         print_usage ()
         sys.exit ()
     
@@ -71,9 +77,7 @@ if __name__ == '__main__':
     batch_size = int (argv[2])
     learning_rate = float (argv[3])
     steps = int (argv[4])
-    # dropout_rate = float (argv[5])
-    dropout_rate = 0.25
-
+    dropout_rate = float (argv[5])
 
     # Write your dataset path
     dataset_train = np.load('cs492c_assignment1_data/train.npy')
