@@ -7,18 +7,15 @@ tf.logging.set_verbosity(tf.logging.INFO)
 def custom_model_fn(features, labels, mode, params):
     """Model function for PA1"""
 
-    layers = params["layers"]
-    learning_rate = params["learning_rate"]
+    depth = params["depth"]
     units = params["units"]
+    learning_rate = params["learning_rate"]
 
     # Input Layer
     input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
 
-    # first_hidden_layer = tf.layers.dense (inputs = input_layer, units = 10)
-    first_hidden_layer = tf.layers.dense (inputs = input_layer, units = 2000, activation = tf.nn.relu)
-    
-    # second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = 10)
-    second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = 2000, activation = tf.nn.relu)
+    first_hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)    
+    second_hidden_layer = tf.layers.dense (inputs = first_hidden_layer, units = units, activation = tf.nn.relu)
 
     # Output logits Layer
     logits = tf.layers.dense(inputs = second_hidden_layer, units = 10)
@@ -51,9 +48,15 @@ def custom_model_fn(features, labels, mode, params):
     eval_metric_ops = {"accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
+def print_usage ():
+    print ("usage: $ python3 skeleton.py [depth] [units] [batch size] [learning rate] [steps]")
 
 if __name__ == '__main__':
     argv = sys.argv[1:]
+
+    if len (sys.argv) != 6:
+        print_usage ()
+        sys.exit ()
 
     # layers = 3
     # units = 100
@@ -61,11 +64,11 @@ if __name__ == '__main__':
     # learning_rate = 0.1
     # steps = 20000
     
-    layers = argv[0]
-    units = argv[1]
-    batch_size = argv[2]
-    learning_rate = argv[3]
-    steps = argv[4]
+    depth = int (argv[0])
+    units = int (argv[1])
+    batch_size = int (argv[2])
+    learning_rate = float (argv[3])
+    steps = int (argv[4])
 
 
     # Write your dataset path
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     eval_labels = dataset_eval[:,784].astype(np.int32)
 
     # Save model and checkpoint
-    model_params = {:"layers" : layers, "units" : units, "learning_rate" : learning_rate}
+    model_params = {"depth" : depth, "units" : units, "learning_rate" : learning_rate}
     classifier = tf.estimator.Estimator(model_fn=custom_model_fn, model_dir="./model", params = model_params)
 
     # Set up logging for predictions
