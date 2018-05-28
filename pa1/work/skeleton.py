@@ -17,18 +17,33 @@ def custom_model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.TRAIN and dropout_rate > 0:
         is_training = True
 
-
     # Input Layer
     input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
 
+    # Hidden Layers for depth 3
     hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)
-    # Dropout Regularization
+    hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
 
-    for i in range (depth - 2):
+    # Hidden Layers for additional depth, shrinking in sizes
+    # if (depth >= 5):
+    #     units = units / 2
+    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+
+    # if (depth == 7):
+    #     units = units / 2
+    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+
+    for i in range (depth - 3):
         hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
         hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
-
 
     # Output logits Layer
     logits = tf.layers.dense(inputs = hidden_layer, units = 10)
@@ -45,10 +60,7 @@ def custom_model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
-    loss = tf.losses.sparse_softmax_cross_entropy (
-        labels,
-        logits
-    )
+    loss = tf.losses.sparse_softmax_cross_entropy (labels, logits)
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -104,6 +116,8 @@ if __name__ == '__main__':
     tensors_to_log = {"probabilities": "softmax_tensor"}
     logging_hook = tf.train.LoggingTensorHook(tensors=tensors_to_log, every_n_iter=50)
 
+    # for i in range (5):
+
     # Train the model. You can train your model with specific batch size and epoches
     train_input = tf.estimator.inputs.numpy_input_fn(x={"x": train_data},
         y=train_labels, batch_size=batch_size, num_epochs=None, shuffle=True)
@@ -124,4 +138,4 @@ if __name__ == '__main__':
     result = np.asarray ([list (x.values())[1] for x in pred_list])
     ## ----------------------------------------- ##
 
-    np.save('20130538.npy', result)
+    np.save('20130538_network_%d.npy' %depth, result)
