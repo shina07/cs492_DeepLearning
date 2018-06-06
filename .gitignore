@@ -11,9 +11,16 @@ local/
 pip-selfcheck.json
 share/
 
+# Tensorflow
+model*/
+*.npy
+
 # Tensorflow Demo
 MNIST-data/
 logs/
 
 # PA1
 cs492c_assignment1_data/
+
+# PA2
+data/

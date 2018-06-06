@@ -4,6 +4,10 @@ import numpy as np
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
+TRAIN_DATA_PATH = "data/train.npy"
+EVAL_DATA_PATH = "data/valid.npy"
+TEST_DATA_PATH = "data/test.npy"
+
 def custom_model_fn(features, labels, mode, params):
     """Model function for PA1"""
 
@@ -18,35 +22,40 @@ def custom_model_fn(features, labels, mode, params):
         is_training = True
 
     # Input Layer
-    input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
+    # input_layer = tf.reshape(features["x"], [-1, 784]) # You also can use 1 x 784 vector
+    input_layer = tf.reshape (features["x"], [-1, 28, 28, 1])
 
     # Hidden Layers for depth 3
-    hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)
-    hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
-    hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-    hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    # hidden_layer = tf.layers.dense (inputs = input_layer, units = units, activation = tf.nn.relu)
+    # hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    # hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
+    # hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
 
-    # Hidden Layers for additional depth, shrinking in sizes
-    # if (depth >= 5):
-    #     units = units / 2
-    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
-    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    # Convolutional Layer #1
+    conv_layer = tf.layers.conv2d (inputs = input_layer, filters = 32, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+    conv_layer = tf.layers.conv2d (inputs = conv_layer, filters = 32, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+    pooling = tf.layers.max_pooling2d (inputs = conv_layer, pool_size = [2, 2], strides = 2)
+    pooling_flat = tf.reshape (pooling, [-1, 14 * 14 * 32])
 
-    # if (depth == 7):
-    #     units = units / 2
-    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
-    #     hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-    #     hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    if (depth >= 5):
+        conv_layer = tf.layers.conv2d (inputs = pooling, filters = 64, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+        pooling = tf.layers.conv2d (inputs = conv_layer, filters = 64, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+        pooling = tf.layers.max_pooling2d (inputs = conv_layer, pool_size = [2, 2], strides = 2)
+        pooling_flat = tf.reshape (pooling, [-1, 7 * 7 * 64])
 
-    for i in range (depth - 3):
-        hidden_layer = tf.layers.dense (inputs = hidden_layer, units = units, activation = tf.nn.relu)
-        hidden_layer = tf.layers.dropout (inputs = hidden_layer, rate = dropout_rate, training = is_training)
+    if (depth == 7):
+        conv_layer = tf.layers.conv2d (inputs = pooling, filters = 128, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+        pooling = tf.layers.conv2d (inputs = conv_layer, filters = 128, kernel_size = [5, 5], padding = "same", activation = tf.nn.relu)
+        pooling = tf.layers.max_pooling2d (inputs = conv_layer, pool_size = [2, 2], strides = 2)
+        pooling_flat = tf.reshape (pooling, [-1, 3 * 3 * 128])
+    
+    dense = tf.layers.dense (inputs = pooling_flat, units = units, activation = tf.nn.relu)
+    dropout = tf.layers.dropout (inputs = dense, rate = dropout_rate, training = mode == tf.estimator.ModeKeys.TRAIN)
 
     # Output logits Layer
-    logits = tf.layers.dense(inputs = hidden_layer, units = 10)
+    # logits = tf.layers.dense(inputs = hidden_layer, units = 10)
+    logits = tf.layers.dense(inputs = dropout, units = 10)
+
 
     predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
@@ -64,7 +73,7 @@ def custom_model_fn(features, labels, mode, params):
 
     # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.GradientDescentOptimizer (learning_rate)
+        optimizer = tf.train.AdamOptimizer (learning_rate)
         # optimizer = tf.train.AdamOptimizer (learning_rate)
         train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
@@ -99,9 +108,9 @@ if __name__ == '__main__':
     dropout_rate = float (argv[5])
 
     # Write your dataset path
-    dataset_train = np.load('cs492c_assignment1_data/train.npy')
-    dataset_eval =  np.load('cs492c_assignment1_data/valid.npy')
-    test_data =  np.load('cs492c_assignment1_data/test.npy')
+    dataset_train = np.load(TRAIN_DATA_PATH)
+    dataset_eval =  np.load(EVAL_DATA_PATH)
+    test_data =  np.load(TEST_DATA_PATH)
 
     train_data = dataset_train[:,:784]
     train_labels = dataset_train[:,784].astype(np.int32)
