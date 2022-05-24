@@ -36,7 +36,7 @@ requests==2.20.0
 six==1.11.0
 ssh-import-id==5.5
 tensorboard==1.6.0
-tensorflow==1.15.4
+tensorflow==2.6.4
 termcolor==1.1.0
 ufw==0.35
 unattended-upgrades==0.1
