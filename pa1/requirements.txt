@@ -15,7 +15,7 @@ language-selector==0.1
 Markdown==2.6.11
 MarkupSafe==0.23
 mysqlclient==1.3.7
-numpy==1.14.2
+numpy==1.22.0
 oauthlib==1.0.3
 pkg-resources==0.0.0
 prettytable==0.7.2
